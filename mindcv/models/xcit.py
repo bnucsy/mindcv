@@ -14,6 +14,7 @@ from mindspore import nn, numpy, ops
 
 from .layers import DropPath
 from .layers.mlp import Mlp
+from .layers.identity import Identity
 from .registry import register_model
 from .utils import _ntuple, load_pretrained
 
@@ -236,7 +237,8 @@ class ClassAttentionBlock(nn.Cell):
         )
 
         self.drop_path = DropPath(
-            drop_path) if drop_path > 0. else ops.Identity()
+            # drop_path) if drop_path > 0. else ops.Identity()
+            drop_path) if drop_path > 0. else Identity()
         self.norm2 = norm_layer([dim])
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer,
@@ -245,9 +247,11 @@ class ClassAttentionBlock(nn.Cell):
         # LayerScale Initialization (no layerscale when None)
         if eta is not None:
             self.gamma1 = Parameter(
-                eta * ops.Ones()((dim), mstype.float32), requires_grad=True)
+                # eta * ops.Ones()((dim), mstype.float32), requires_grad=True)
+                ops.Ones()((dim), mstype.float32), requires_grad=True)
             self.gamma2 = Parameter(
-                eta * ops.Ones()((dim), mstype.float32), requires_grad=True)
+                # eta * ops.Ones()((dim), mstype.float32), requires_grad=True)
+                ops.Ones()((dim), mstype.float32), requires_grad=True)
         else:
             self.gamma1, self.gamma2 = 1.0, 1.0
 
@@ -325,7 +329,8 @@ class XCABlock(nn.Cell):
             proj_drop=drop
         )
         self.drop_path = DropPath(
-            drop_path) if drop_path > 0. else nn.Identity()
+            # drop_path) if drop_path > 0. else nn.Identity()
+            drop_path) if drop_path > 0. else Identity()
         self.norm2 = norm_layer([dim])
 
         mlp_hidden_dim = int(dim * mlp_ratio)
@@ -336,11 +341,14 @@ class XCABlock(nn.Cell):
         self.local_mp = LPI(in_features=dim, act_layer=act_layer)
 
         self.gamma1 = Parameter(
-            eta * ops.ones(dim, mstype.float32), requires_grad=True)
+            # eta * ops.ones(dim, mstype.float32), requires_grad=True)
+            ops.ones(dim, mstype.float32), requires_grad=True)
         self.gamma2 = Parameter(
-            eta * ops.ones(dim, mstype.float32), requires_grad=True)
+            # eta * ops.ones(dim, mstype.float32), requires_grad=True)
+            ops.ones(dim, mstype.float32), requires_grad=True)
         self.gamma3 = Parameter(
-            eta * ops.ones(dim, mstype.float32), requires_grad=True)
+            # eta * ops.ones(dim, mstype.float32), requires_grad=True)
+            ops.ones(dim, mstype.float32), requires_grad=True)
 
     def construct(self, x, H, W):
         x = x + self.drop_path(self.gamma1 * self.attn(self.norm1(x)))
@@ -425,7 +433,8 @@ class XCiT(nn.Cell):
             for i in range(cls_attn_layers)])
         self.norm = norm_layer([embed_dim])
         self.head = nn.Dense(
-            in_channels=embed_dim, out_channels=num_classes) if num_classes > 0 else ops.Identity()
+            # in_channels=embed_dim, out_channels=num_classes) if num_classes > 0 else ops.Identity()
+            in_channels=embed_dim, out_channels=num_classes) if num_classes > 0 else Identity()
 
         self.pos_embeder = PositionalEncodingFourier(dim=embed_dim)
         self.use_pos = use_pos
